@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AnRide - Peta</title>
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+  <style>
+  :root {
+    --bg-1: #2f3a8a;
+    --bg-2: #2d7b86;
+    --bg-3: #bde6d6;
+    --card: #ffffff;
+    --ink: #0f172a;
+    --muted: #475569;
+    --brand: #16a34a;
+    --brand-2: #15803d;
+    --radius: 18px;
+    --shadow: 0 10px 28px rgba(0,0,0,.18);
+  }
+  * { box-sizing: border-box }
+  html, body { height: 100% }
+  body {
+    margin: 0;
+    font-family: 'Poppins', system-ui, -apple-system, Segoe UI, Roboto, Arial;
+    color: var(--ink);
+    background: linear-gradient(180deg, var(--bg-1) 0%, #2f4b92 28%, #2c6f86 62%, var(--bg-3) 100%);
+  }
+
+  header.appbar {
+    color: #fff;
+    text-align: center;
+    padding: 10px 12px;
+    font-weight: 800;
+    font-size: 36px;
+    letter-spacing: .5px;
+    text-shadow: 0 2px 10px rgba(0,0,0,.35);
+  }
+
+  .wrap {
+    padding: 16px;
+    display: grid;
+    gap: 16px;
+    align-content: start;
+  }
+
+  .map-card {
+    background: var(--card);
+    border-radius: 22px;
+    box-shadow: var(--shadow);
+    padding: 16px;
+  }
+  .map-frame {
+    border-radius: 18px;
+    overflow: hidden;
+    border: 3px solid #1e293b22;
+  }
+  #map {
+    width: 100%;
+    height: 58vh;
+  }
+
+  .eta-row {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+    padding-top: 8px;
+  }
+  .eta-title { font-weight: 800; font-size: 26px; color: #ffffff; text-shadow: 0 2px 10px rgba(0,0,0,.35) }
+  .eta-pill {
+    background: #fff;
+    border-radius: 999px;
+    padding: 8px 14px;
+    font-weight: 800;
+    font-size: 18px;
+    box-shadow: var(--shadow);
+    border: 2px solid #0f766e22;
+  }
+
+  .footer {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+    align-items: center;
+  }
+  .driver-card {
+    display: grid;
+    grid-template-columns: 56px 1fr;
+    gap: 10px;
+    align-items: center;
+    background: var(--card);
+    border-radius: var(--radius);
+    padding: 10px 12px;
+    box-shadow: var(--shadow);
+  }
+  .avatar { width: 56px; height: 56px; border-radius: 50%; background: linear-gradient(135deg,#94a3b8,#e2e8f0); display: grid; place-items: center; font-weight: 800; color: #0f172a }
+  .driver-name { font-weight: 800; font-size: 18px }
+  .driver-meta { color: var(--muted); font-size: 12px }
+
+  .action-btn {
+    background: #fff;
+    border: 0;
+    border-radius: 14px;
+    padding: 14px 18px;
+    font-weight: 800;
+    font-size: 18px;
+    box-shadow: var(--shadow);
+    cursor: pointer;
+    transition: transform .05s ease, background .15s ease, color .15s ease;
+  }
+  .action-btn:active { transform: scale(.99) }
+  .btn-cancel { background: #e2e8f0; color: #0f172a }
+  .btn-chat { background: #22c55e; color: #062b18 }
+  .btn-chat:hover { background: #16a34a }
+
+  /* Leaflet tweaks */
+  .leaflet-control-zoom a { border-radius: 10px }
+
+  /* Driver panel style to match pengantaran.html */
+  .driver-panel {
+    background: linear-gradient(135deg, #2c5f6b 0%, #3a7a85 100%);
+    color: #ffffff;
+    padding: 24px 20px;
+    border-radius: 20px 20px 0 0;
+    box-shadow: 0 -4px 20px rgba(0,0,0,0.1);
+    margin-top: 8px;
+  }
+  .driver-info { display: flex; align-items: center; gap: 16px; margin-bottom: 20px }
+  .driver-avatar { width: 60px; height: 60px; border-radius: 50%; background: rgba(255,255,255,0.2); display: flex; align-items: center; justify-content: center; border: 3px solid rgba(255,255,255,0.3) }
+  .driver-avatar svg { width: 30px; height: 30px; fill: #fff }
+  .driver-details h3 { font-size: 18px; font-weight: 700; margin: 0 0 4px }
+  .driver-details p { font-size: 14px; opacity: .9; margin: 0 0 2px }
+  .vehicle-info { background: rgba(255,255,255,0.1); padding: 12px 16px; border-radius: 12px; margin-bottom: 20px }
+  .vehicle-info p { font-size: 13px; margin: 0 0 4px }
+  .eta-section { text-align: center; margin-bottom: 20px }
+  .eta-label { font-size: 14px; opacity: .9; margin-bottom: 4px }
+  .eta-time { font-size: 24px; font-weight: 900; color: #4CAF50 }
+  .btn { flex: 1; padding: 14px 20px; border: none; border-radius: 12px; font-size: 16px; font-weight: 700; cursor: pointer; transition: all .2s; text-transform: uppercase; letter-spacing: .5px }
+  .btn-cancel { background: #f44336; color: #fff }
+  .btn-cancel:hover { background: #d32f2f; transform: translateY(-1px) }
+  .btn-chat { background: #4CAF50; color: #fff }
+  .btn-chat:hover { background: #45a049; transform: translateY(-1px) }
+  .action-buttons { display: flex; gap: 12px }
+
+  /* Responsive */
+  @media (max-width: 1024px) {
+    #map { height: 52vh }
+    .eta-title { font-size: 24px }
+  }
+  @media (max-width: 768px) {
+    header.appbar { font-size: 30px }
+    .wrap { padding: 12px }
+    #map { height: 48vh }
+    .footer { grid-template-columns: 1fr; }
+  }
+  @media (max-width: 480px) {
+    #map { height: 46vh }
+    .driver-card { grid-template-columns: 48px 1fr }
+    .avatar { width: 48px; height: 48px }
+    .action-btn { font-size: 16px; padding: 12px 16px }
+    .driver-panel { padding: 20px 16px }
+    .driver-avatar { width: 50px; height: 50px }
+    .driver-avatar svg { width: 24px; height: 24px }
+    .eta-time { font-size: 20px }
+    .btn { padding: 12px 16px; font-size: 14px }
+  }
+  </style>
+</head>
+<body>
+  <header class="appbar">AnRide</header>
+  <main class="wrap" aria-label="Peta perjalanan">
+    <section class="map-card">
+      <div class="map-frame">
+        <div id="map" role="application" aria-label="Peta rute AnRide"></div>
+      </div>
+    </section>
+
+    <section class="driver-panel" aria-label="Panel driver">
+      <div class="driver-info">
+        <div class="driver-avatar" aria-hidden="true">
+          <svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+        </div>
+        <div class="driver-details">
+          <h3>Faris</h3>
+          <p>Driver</p>
+        </div>
+      </div>
+      <div class="vehicle-info">
+        <p><strong>Kendaraan:</strong> Yamaha R15</p>
+        <p><strong>Warna:</strong> Hitam</p>
+        <p><strong>PLAT NO:</strong> B 1234 XX</p>
+      </div>
+      <div class="eta-section">
+        <div class="eta-label">Estimasi</div>
+        <div class="eta-time" id="etaTime">-</div>
+      </div>
+      <div class="action-buttons">
+        <button type="button" class="btn btn-cancel" onclick="(history.length>1?history.back():location.href='index.html')">Batalkan</button>
+        <button type="button" class="btn btn-chat" onclick="alert('Menghubungkan ke driver...')">Chat driver</button>
+      </div>
+    </section>
+  </main>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+  <script>
+    // Koordinat contoh sekitar Cileungsi -> Jonggol
+    const points = [
+      [-6.3919, 106.9582], // Cileungsi
+      [-6.3808, 106.9860],
+      [-6.4025, 107.0417],
+      [-6.4674, 107.0830],
+      [-6.5319, 107.0802], // mendekati Jonggol
+    ];
+
+    const start = points[0];
+    const end = points[points.length - 1];
+
+    const map = L.map('map', {
+      zoomControl: true,
+      scrollWheelZoom: true
+    });
+
+    const tiles = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19,
+      attribution: '&copy; OpenStreetMap'
+    }).addTo(map);
+
+    // Polyline rute hijau
+    const route = L.polyline(points, { color: '#16a34a', weight: 6, opacity: 0.9 }).addTo(map);
+    map.fitBounds(route.getBounds(), { padding: [24, 24] });
+
+    // Marker asal (panah hijau) dan tujuan (pin oranye)
+    const startIcon = L.divIcon({
+      className: 'start-icon',
+      html: '<div style="width:28px;height:28px;border-radius:50%;background:#10b981;border:3px solid #fff;box-shadow:0 4px 12px rgba(0,0,0,.25);display:grid;place-items:center;color:#fff;font-weight:800">↑</div>',
+      iconSize: [28, 28],
+      iconAnchor: [14, 14]
+    });
+    const endIcon = L.divIcon({
+      className: 'end-icon',
+      html: '<div style="width:26px;height:26px;border-radius:50%;background:#fb923c;border:3px solid #fff;box-shadow:0 4px 12px rgba(0,0,0,.25)"></div>',
+      iconSize: [26, 26],
+      iconAnchor: [13, 13]
+    });
+
+    L.marker(start, { icon: startIcon }).addTo(map).bindPopup('Titik Jemput');
+    L.marker(end, { icon: endIcon }).addTo(map).bindPopup('Tujuan');
+
+    // Util: jarak haversine km
+    function haversineKm(a, b) {
+      const R = 6371;
+      const toRad = d => d * Math.PI / 180;
+      const dLat = toRad(b[0] - a[0]);
+      const dLng = toRad(b[1] - a[1]);
+      const lat1 = toRad(a[0]);
+      const lat2 = toRad(b[0]);
+      const h = Math.sin(dLat/2)**2 + Math.cos(lat1)*Math.cos(lat2)*Math.sin(dLng/2)**2;
+      return 2 * R * Math.asin(Math.sqrt(h));
+    }
+
+    // Hitung panjang total rute dan kumulatif per segmen
+    const cum = [0];
+    for (let i = 1; i < points.length; i++) cum[i] = cum[i-1] + haversineKm(points[i-1], points[i]);
+    const totalKm = cum[cum.length - 1];
+
+    // Interpolasi posisi pada fraksi jarak [0..1]
+    function positionAtFraction(frac) {
+      const targetKm = frac * totalKm;
+      let idx = 1; while (idx < cum.length && cum[idx] < targetKm) idx++;
+      const prevIdx = Math.max(1, idx);
+      const aIdx = prevIdx - 1; const bIdx = prevIdx;
+      const segKm = haversineKm(points[aIdx], points[bIdx]) || 1e-9;
+      const segStartKm = cum[aIdx];
+      const t = Math.min(1, Math.max(0, (targetKm - segStartKm) / segKm));
+      const a = points[aIdx], b = points[bIdx];
+      const lat = a[0] + (b[0] - a[0]) * t;
+      const lng = a[1] + (b[1] - a[1]) * t;
+      return [lat, lng];
+    }
+
+    // Marker driver bergerak realtime (simulasi dipercepat)
+    const driverIcon = L.divIcon({
+      className: 'driver-icon',
+      html: '<div style="width:20px;height:20px;border-radius:50%;background:#ef4444;border:3px solid #fff;box-shadow:0 4px 12px rgba(0,0,0,.25)"></div>',
+      iconSize: [20,20], iconAnchor: [10,10]
+    });
+    let progress = 0; // 0..1
+    const driver = L.marker(positionAtFraction(0), { icon: driverIcon }).addTo(map);
+
+    const avgSpeedKmH = 30; // kecepatan realistis
+    const accel = 8; // percepat waktu 8x
+    const tickMs = 200; // update setiap 200ms
+
+    function tick() {
+      // Update posisi (linear sepanjang rute)
+      progress = Math.min(1, progress + 0.01); // 0.01 per 200ms => ~20s selesai
+      const pos = positionAtFraction(progress);
+      driver.setLatLng(pos);
+
+      // Hitung ETA tersisa (dengan percepatan)
+      const remainingKm = Math.max(0, totalKm * (1 - progress));
+      const etaMinutes = Math.max(1, Math.round(((remainingKm / avgSpeedKmH) * 60) / accel));
+      const etaEl = document.getElementById('etaTime');
+      if (etaEl) etaEl.textContent = progress >= 1 ? 'Tiba' : (etaMinutes + ' Menit');
+
+      if (progress < 1) {
+        setTimeout(tick, tickMs);
+      } else {
+        setTimeout(() => { window.location.href = 'rating.html'; }, 800);
+      }
+    }
+    setTimeout(tick, tickMs);
+
+    // Responsiveness: refresh tiles on container resize to avoid white gaps
+    new ResizeObserver(() => { map.invalidateSize(); }).observe(document.getElementById('map'));
+  </script>
+</body>
+</html>
+
+
